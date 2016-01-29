@@ -9,8 +9,9 @@ public class Potion extends Item {
         cost = c;
     }
 
-    
-    public int Use(){
+
+    @Override
+    public int getItemAttack(){
         return heal;  
     }
 }

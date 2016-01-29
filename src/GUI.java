@@ -1,4 +1,6 @@
+//imports
 
+import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
@@ -13,27 +15,43 @@ import javax.swing.text.DefaultCaret;
 
 public class GUI extends javax.swing.JFrame {
 
+    //timers needed to run various tasks
     Timer timer1, timer2, timer3;
+    //tasks the timers run
     TimerTask txtupdate;
     TimerTask pupdate;
     TimerTask battleTimer, battleCheck;
+    //the player
     Player p;
+    //the enemy
     Enemy e;
+    //for playing music
     Clip pagoda, hit, danger, levelup;
+    //for the editing of lists
     DefaultListModel model;
+    //hashmaps for keeping track of items
+    HashMap<Integer, Item> map;
+    HashMap<Integer, Item> temp;
+    //keeps track of who's turn it is
     int turn = 0;
+    //keeps track of what floor the player is on and their kills
     int floor = 0, kills = -1;
+    //declaration for the choice a player makes later on in the game
     int choice;
+    //used to check the current stats of the player
     int levelcheck, attackcheck, defensecheck, hpcheck;
-
+    //used to set the player name and if they're buying or selling in the shop
+    String nameplayer, shoptype;
+    
     public GUI() {
-        String nameplayer;
+        //sets the player's name at the intro
         nameplayer = JOptionPane.showInputDialog("Who are you?");
         p = new Player(nameplayer, 1, 0);
-        this.setUndecorated(true);
         initComponents();
+        //makes it so the dialog box scrolls down automatically
         DefaultCaret caret = (DefaultCaret) txtevent.getCaret();
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        //try catch for loading music files
         try {
             AudioInputStream pagodamusic = AudioSystem.getAudioInputStream(
                     this.getClass().getResource("12 - Timeworn Pagoda.wav"));
@@ -53,18 +71,24 @@ public class GUI extends javax.swing.JFrame {
             levelup.open(levelupsound);
         } catch (Exception ex) {
         }
+        //starts the music
         pagoda.start();
+        //loops the music a lot of time
         pagoda.loop((int) Math.pow(1000, 1000));
+        //centres the window on the screen
         this.setLocationRelativeTo(null);
+        //resizing the window messes with the GUI so its set to not resize
         this.setResizable(false);
-        i = new Item[10];
+        //making sure you can't attack before the battle starts
         btnattack.setEnabled(false);
+        //checking the players current stats
         hpcheck = p.getPlayerCurrentHealth();
         levelcheck = p.getPlayerLevel();
         attackcheck = p.getPlayerAttack();
         defensecheck = p.getPlayerDefense();
         attackcheck = p.getPlayerAttack();
         defensecheck = p.getPlayerDefense();
+        //configuring the various progress bars to work
         expbar.setMinimum(0);
         expbar.setStringPainted(true);
         hpbar.setMinimum(0);
@@ -72,15 +96,26 @@ public class GUI extends javax.swing.JFrame {
         enemybar.setMinimum(0);
         enemybar.setStringPainted(true);
         enemybar.setString("");
+        //initializing the timers
         timer1 = new Timer();
         timer2 = new Timer();
         timer3 = new Timer();
+        //initializing the model
         model = new DefaultListModel();
-        lstshop.setModel(model);
+        //making a temporary hashmap and duplicating it as the players map
+        temp = new HashMap<Integer, Item>();
+        temp.putAll(p.getHashMap());
+        //map for the shop
+        map = new HashMap<Integer, Item>();
+        //adding items to the shop
+        map.put(1, new Potion("Potion", 10, 50));
+        map.put(2, new Sword("Sword", 3, 100));
+        //used to update the dialog box
         txtupdate = new TimerTask() {
             @Override
             public void run() {
                 int size = 0;
+                //removes the last line of the box
                 if (txtevent.getDocument().getLength() > size) {
                     int end = 0;
                     try {
@@ -93,29 +128,36 @@ public class GUI extends javax.swing.JFrame {
                 size = txtevent.getDocument().getLength();
             }
         };
+        //updates various things in regards to the player
         pupdate = new TimerTask() {
             @Override
             public void run() {
                 p.PlayerUpdate();
+                //setting the various labels in the GUI
                 lbllvl.setText(p.getPlayerName() + " LVL " + p.getPlayerLevel());
                 lblgold.setText("$" + p.getPlayerGold());
+                //Making sure the players hp and exp bars are up to date
                 expbar.setMaximum(p.getNextLevel() - p.getPreviousLevel());
                 expbar.setValue(p.getPlayerExperience() - p.getPreviousLevel());
                 expbar.setString((p.getPlayerExperience() - p.getPreviousLevel()) + "/" + (p.getNextLevel() - p.getPreviousLevel()));
                 hpbar.setMaximum(p.getPlayerHealth());
                 hpbar.setValue(p.getPlayerCurrentHealth());
                 hpbar.setString(p.getPlayerCurrentHealth() + "/" + p.getPlayerHealth());
+                //enemy's bars are in a try catch, so when there is no enemy we don't get an error
                 try {
                     enemybar.setMaximum(e.getEnemyHealth());
                     enemybar.setValue(e.getCurhealth());
                     enemybar.setString(e.getCurhealth() + "/" + e.getEnemyHealth());
                 } catch (Exception e) {
-
+                    
                 }
+                //runs when the player dies
                 if (p.getPlayerCurrentHealth() < 1) {
+                    //stops all timers
                     timer1.cancel();
                     timer2.cancel();
                     timer3.cancel();
+                    //telling the player they have died
                     txtevent.append("\n" + p.getPlayerName() + " has been defeated by the " + e.getEnemyName());
                     try {
                         Thread.sleep(3000);
@@ -128,30 +170,36 @@ public class GUI extends javax.swing.JFrame {
                     } catch (InterruptedException ex) {
                         Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
                     }
+                    //program closes
                     System.exit(0);
                 }
+                //checks if the player has levelled up
                 if (p.getPlayerLevel() > levelcheck) {
+                    //plays level up sound
                     levelup.setFramePosition(0);
                     levelup.start();
-
+                    //telling the player their stat increases
                     txtevent.append("\n" + p.getPlayerName() + " has leveled up!\n");
                     txtevent.append("Health has gone up " + ((p.getPlayerHealth()) - ((int) ((((p.getPlayerLevel() - 1) - 1) * ((p.getPlayerLevel()) - 1)) + 20))));
                     txtevent.append("\nAttack has gone up " + (p.getPlayerAttack() - attackcheck));
                     txtevent.append("\nDefense has gone up " + (p.getPlayerDefense() - defensecheck) + "\n");
+                    //increases the players health
                     p.setCurrentPlayerHealth();
+                    //sets the checks to the new statistics
                     levelcheck = p.getPlayerLevel();
                     attackcheck = p.getPlayerAttack();
                     defensecheck = p.getPlayerDefense();
                 }
             }
         };
+        //the timers run as long as the player is alive
         if (p.getPlayerCurrentHealth() >= 1) {
             timer1.scheduleAtFixedRate(txtupdate, 10000, 10000);
             timer1.scheduleAtFixedRate(pupdate, 10, 10);
         }
-
+        
     }
-
+    
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -191,6 +239,7 @@ public class GUI extends javax.swing.JFrame {
         mnustats = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("Deeper");
 
         txtevent.setEditable(false);
         txtevent.setColumns(20);
@@ -276,6 +325,11 @@ public class GUI extends javax.swing.JFrame {
         lblgold.setText("$0.00");
 
         btnconfirm.setText("Confirm");
+        btnconfirm.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnconfirmActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -485,6 +539,7 @@ public class GUI extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnbattleActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnbattleActionPerformed
+        //parameters for starting the battle
         if (kills % 10 != 0 || kills == -1 || floor == 0) {
             if (floor == 0) {
                 floor++;
@@ -492,19 +547,30 @@ public class GUI extends javax.swing.JFrame {
             if (kills == -1) {
                 kills = 0;
             }
+            //starts the new music
             pagoda.stop();
             danger.start();
             danger.loop((int) Math.pow(1000, 1000));
+            //making sure you can't use the shop in the dungeon
             btnbattle.setEnabled(false);
+            btnbuy.setEnabled(false);
+            btnsell.setEnabled(false);
+            btnconfirm.setEnabled(false);
+            lstshop.setEnabled(false);
+            //getter for spawning the enemy
             getEnemy();
+            //telling the player what enemy has appeared
             txtevent.append("\nA " + e.getEnemyName() + " has appeared!" + "\n");
             timer3.cancel();
+            //starts the battle with the enemy
             battle(e);
             lblfloor.setText("Floor " + floor);
         } else {
+            //when the player finishes the tenth floor they have the option to continue or go back to town
             if (floor >= 1) {
                 choice = JOptionPane.showConfirmDialog(this, "Would you like to proceed to the next floor?", "Choose", JOptionPane.YES_NO_OPTION);
             }
+            //player chose to continue and the battle starts again from where itr left off
             if (choice == 0) {
                 floor++;
                 timer3.cancel();
@@ -514,45 +580,67 @@ public class GUI extends javax.swing.JFrame {
                 battle(e);
                 lblfloor.setText("Floor " + floor);
             }
+            //player returns to the town
             if (choice == 1) {
+                //heals the player fully
                 p.setCurrentPlayerHealth();
+                //sets the floor back to 0
                 floor = 0;
                 lblfloor.setText("");
+                //cancels the battle timer
                 timer3.cancel();
                 btnbattle.setText("Battle!");
+                //re-enabling all the shop buttons
                 btnbattle.setEnabled(true);
                 btnattack.setEnabled(false);
+                btnitem.setEnabled(true);
+                btnbuy.setEnabled(true);
+                btnsell.setEnabled(true);
+                btnconfirm.setEnabled(true);
+                lstshop.setEnabled(true);
+                //starts town music again
                 danger.stop();
                 pagoda.setFramePosition(0);
                 pagoda.start();
                 pagoda.loop((int) Math.pow(1000, 1000));
+                //removes the enemies stats in the top
                 lblenemy.setText("");
                 enemybar.setString("");
             }
         }
     }//GEN-LAST:event_btnbattleActionPerformed
 
+    //closes the program
     private void mnuexitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuexitActionPerformed
         System.exit(0);
     }//GEN-LAST:event_mnuexitActionPerformed
 
+    //everything to do with how the player attacks
     private void btnattackActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnattackActionPerformed
+       //runs if the player is alive
         if (p.getPlayerCurrentHealth() >= 1) {
             txtevent.append("\n" + p.getPlayerName() + " attacks!" + "\n");
+            //plays hit sound
             hit.start();
             hit.setFramePosition(0);
             int temp;
+            // damage calculation
             temp = ((int) ((Math.random() * (p.getPlayerAttack() - (p.getPlayerAttack() * 0.75)) + p.getPlayerAttack() * 0.75) + 0.50)) - e.getEnemyDefense();
+            //ensures you always hit at least one damage
             if (temp < 1) {
                 temp = 1;
             }
+            //does the damage to the enemy
             e.setCurhealth(temp);
             txtevent.append(p.getPlayerName() + " dealt " + temp + " damage to the " + e.getEnemyName() + "\n");
+            //goes to the enemies turn
             turn++;
             btnattack.setEnabled(false);
+            btnitem.setEnabled(false);
         }
     }//GEN-LAST:event_btnattackActionPerformed
 
+    //shows all the player's stats
     private void mnustatsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnustatsActionPerformed
         String result = "";
         result += ("" + p.getPlayerName() + "\n");
@@ -567,57 +655,98 @@ public class GUI extends javax.swing.JFrame {
         JOptionPane.showMessageDialog(this, result);
     }//GEN-LAST:event_mnustatsActionPerformed
 
+    //the developer console, used to make sure I don't lose the game while testing
     private void devconsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_devconsActionPerformed
         String cons = JOptionPane.showInputDialog(this, "Developer Console");
-       try{
-        if (cons.equals("maxhealth")) {
-            p.setCurrentPlayerHealth();
+        try {
+            if (cons.equals("maxhealth")) {
+                p.setCurrentPlayerHealth();
+            }
+            if (cons.equals("smite")) {
+                e.setCurhealth(1000);
+            }
+            if (cons.equals("buffx10")) {
+                p.addPlayerExperience(10);
+            }
+            if (cons.equals("buffx100")) {
+                p.addPlayerExperience(100);
+            }
+        } catch (Exception e) {
         }
-        if (cons.equals("smite")) {
-            e.setCurhealth(1000);
-        }
-        if (cons.equals("buffx10")) {
-            p.addPlayerExperience(10);
-        }
-        if (cons.equals("buffx100")) {
-            p.addPlayerExperience(100);
-        }
-       } catch(Exception e){}
     }//GEN-LAST:event_devconsActionPerformed
 
     private void btnbuyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnbuyActionPerformed
+        //sets the shop to the buy option
+        shoptype = "buy";
         model.clear();
-        i[0] = new Potion("Potion", 10, 50);
-        i[1] = new Sword("Bronze Sword", 3, 100);
-        int temp[] = new int[10];
-        for(int x=0; x < i.length; x++){
-            int k=0;
-            String tempstring = i[k].getItemName();
-            txtevent.append("" + tempstring);
-        temp[k] = String.valueOf("Potion".charAt(0)).hashCode();
-        txtevent.append("" + temp[k]);
-        k++;
-        if (k > i.length) break;
-        }
-        this.insertionSort();
-        for(int x=0; x < i.length; x++){
-        model.addElement(i[x]);
+        //adds all the items you can buy
+        for (Integer key : map.keySet()) {
+            model.addElement(map.get(key).getItemName());
         }
         lstshop.setModel(model);
-
-        
     }//GEN-LAST:event_btnbuyActionPerformed
 
+    //uncompleted code for using your items
     private void btnitemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnitemActionPerformed
-
+        JOptionPane.showMessageDialog(this, "Not Completed");
     }//GEN-LAST:event_btnitemActionPerformed
 
     private void btnsellActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnsellActionPerformed
-        
+        //sets the shop type to sell
+        shoptype = "sell";
+        model.clear();
+        //gets the players items
+        temp = new HashMap<Integer, Item>();
+        temp.putAll(p.getHashMap());
+        //puts the items into the shop to sell
+        for (Integer key : temp.keySet()) {
+            model.addElement(temp.get(key).getItemName());
+        }
+        lstshop.setModel(model);
     }//GEN-LAST:event_btnsellActionPerformed
 
+    //this took me forever to figure out, take a look at it becauses i'm proud ************************************************
+    private void btnconfirmActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnconfirmActionPerformed
+        //try catch just incase no item has been selected
+        try {
+            //gets what item has been selected
+            int loc = lstshop.getSelectedIndex();
+            //player is buying the shops items
+            if (shoptype.equals("buy")) {
+                //checking if the player can afford the item, then buys it if possible
+                if (p.getPlayerGold() >= map.get(loc + 1).getCost()) {
+                    p.addItem(map.get(loc + 1));
+                    p.addPlayerGold(map.get(loc + 1).getCost() * -1);
+                }
+                lstshop.setModel(model);
+            }
+            //player is selling their items
+            if (shoptype.equals("sell")) {
+                //since the key I associate with the items in the hashmap isn't 
+                //reflective of it's position in the list, I have to check for
+                //the amount of keys there are to get to it's position in the map
+                int pass = 0;
+                int tempint = -1;
+                for (Integer key : temp.keySet()) {
+                    if (pass == loc) {
+                        tempint = key;
+                    }
+                    pass++;
+                }
+                //giving the player their gold from selling
+                p.addPlayerGold(temp.get(tempint).getCost());
+                p.removeItem(tempint);
+                model.removeElementAt(loc);
+            }
+            
+        } catch (Exception e) {
+        };
+    }//GEN-LAST:event_btnconfirmActionPerformed
+    
+    //getter for the enemy, enemies get harder each floor
     public void getEnemy() {
         int id = 0;
+        //spawns different enemies at random per floor
         if (floor <= 10) {
             id = (int) ((Math.random() * 1 + 1) + 0.49);
         }
@@ -627,12 +756,13 @@ public class GUI extends javax.swing.JFrame {
         if (floor > 20 && floor < 31) {
             id = (int) ((Math.random() * (8 - 6) + 6) + 0.49);
         }
+        //assigning id's to the enemies
         if (id == 1) {
             e = new Slime();
             lblenemy.setIcon(e.getImage());
             lblenemyname.setText(e.getEnemyName());
         }
-
+        
         if (id == 2) {
             e = new Skeleton();
             lblenemy.setIcon(e.getImage());
@@ -653,10 +783,12 @@ public class GUI extends javax.swing.JFrame {
             lblenemy.setIcon(e.getImage());
             lblenemyname.setText(e.getEnemyName());
         }
-
+        
     }
-
+    
+    //the code that runs as the player fights the enemy
     public void battle(Enemy enemy) {
+        //the enemy has a potential to get the first strike on you
         double firstStrike;
         firstStrike = Math.random() * 100 + 1;
         if (firstStrike > 75) {
@@ -665,10 +797,13 @@ public class GUI extends javax.swing.JFrame {
         } else {
             turn = 1;
             btnattack.setEnabled(true);
+            btnitem.setEnabled(true);
         }
+        //timertask to check various occurances throughout the battle
         battleCheck = new TimerTask() {
             @Override
             public void run() {
+                //code that runs when an enemy is defeated
                 if (e.getCurhealth() < 1) {
                     levelcheck = p.getPlayerLevel();
                     txtevent.append("\nThe " + e.getEnemyName() + " has perished!\n");
@@ -678,6 +813,8 @@ public class GUI extends javax.swing.JFrame {
                     txtevent.append(p.getPlayerName() + " gained " + e.getEnemyGpdrop() + " gold\n");
                     p.addPlayerGold(e.getEnemyGpdrop());
                     lblenemy.setIcon(null);
+                    btnitem.setEnabled(true);
+                    //makes it so you have to keep fighting till you beat ten floors
                     if (kills % 10 != 0) {
                         btnbattle.setText("Continue");
                         try {
@@ -688,6 +825,8 @@ public class GUI extends javax.swing.JFrame {
                         btnbattle.setEnabled(true);
                         floor++;
                     }
+                    //when ten enemies have been defeated that means you have fought
+                    //through ten floors and you get the choice to continue or not
                     if (kills % 10 == 0) {
                         btnbattle.setText("Choose");
                         try {
@@ -699,17 +838,20 @@ public class GUI extends javax.swing.JFrame {
                     }
                     timer3.cancel();
                 }
-
+                
             }
         };
-
+        //timers run that monitor the battle
         timer3 = new Timer();
         timer3.scheduleAtFixedRate(battleCheck, 200, 200);
-
+        
+        //the actual battle itself
         battleTimer = new TimerTask() {
             @Override
             public void run() {
+                //runs this code if the enemy is alive
                 if (e.getCurhealth() > 0) {
+                    //the enemy attacks if it's their turn (2)
                     if (turn % 2 == 0) {
                         txtevent.append("\nThe " + e.getEnemyName() + " is attacking!\n");
                         try {
@@ -718,13 +860,18 @@ public class GUI extends javax.swing.JFrame {
                         }
                         hit.start();
                         hit.setFramePosition(0);
+                        //damage calulation for the enemy
                         int damage = ((int) ((Math.random() * (e.getEnemyAttack() - (e.getEnemyAttack() * 0.75)) + e.getEnemyAttack() * 0.75) + 0.50)) - p.getPlayerDefense();
+                        //the enemy also hits at least one as well
                         if (damage < 1) {
                             damage = 1;
                         }
+                        //telling the player what has happened
                         txtevent.append(p.getPlayerName() + " took " + damage + " damage!\n");
                         hpcheck = p.getPlayerCurrentHealth();
+                        //applying damage to the player
                         p.addPlayerHealth((-1 * damage));
+                        //turn goes to player
                         turn++;
                     } else {
                         try {
@@ -733,15 +880,18 @@ public class GUI extends javax.swing.JFrame {
                         }
                     }
                 } else {
+                    //timer doesn't run if the enemy is dead
                     timer2.cancel();
                 }
+                //makes it so the player can attack and use items if they are still alive
                 if (p.getPlayerCurrentHealth() < hpcheck) {
                     btnattack.setEnabled(true);
+                    btnitem.setEnabled(true);
                     hpcheck = p.getPlayerCurrentHealth();
                 }
             }
         };
-
+        //these timers run if the enemy is still alive
         if (e.getCurhealth() >= 1) {
             timer2 = new Timer();
             timer2.scheduleAtFixedRate(battleTimer, 200, 200);
@@ -750,7 +900,6 @@ public class GUI extends javax.swing.JFrame {
         }
     }
     
-
 
     /**
      * @param args the command line arguments

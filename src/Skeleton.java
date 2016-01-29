@@ -3,7 +3,9 @@ import javax.swing.ImageIcon;
 
 public class Skeleton extends Enemy {
 
+    //all the stats for the enemy
     public Skeleton() {
+        super();
         image = new ImageIcon(getClass().getResource("Skeleton.gif"));
         name = "Skeleton";
         expdrop = (int)(Math.random() * (8 - 4) + 4);
@@ -14,5 +16,10 @@ public class Skeleton extends Enemy {
         defense = 1;
     }
     
+    @Override
+    public void reduceDamage() {
+        if (defense % p.getPlayerAttack() < defense * 0.01);
+        defense *= p.getPlayerAttack()/defense;
+    }
     
 }

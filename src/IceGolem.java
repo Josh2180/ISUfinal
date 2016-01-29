@@ -3,7 +3,9 @@ import javax.swing.ImageIcon;
 
 public class IceGolem extends Enemy {
 
+    //all the stats for the enemy
     public IceGolem() {
+        super();
         image = new ImageIcon(getClass().getResource("IceGolem.gif"));
         name = "Ice Golem";
         expdrop = (int)(Math.random() * (25 - 10) + 10);
@@ -14,5 +16,9 @@ public class IceGolem extends Enemy {
         defense = 8;
     }
     
-    
+    @Override
+    public void reduceDamage() {
+        if (defense % p.getPlayerAttack() < defense * 0.01);
+        defense = defense/(defense / p.getPlayerAttack());
+    }
 }

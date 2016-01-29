@@ -2,9 +2,10 @@
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
-public class Enemy {
+public abstract class Enemy {
 
-    protected String name;
+    //various declarations
+    static String name;
     protected int expdrop;
     protected int gpdrop;
     protected int health;
@@ -12,44 +13,63 @@ public class Enemy {
     protected int attack;
     protected int defense;
     protected ImageIcon image;
+    final Player p;
 
+    //empty because the parent class isn't actually an enemy
     public Enemy() {
-
+        p = new Player();
     }
     
-    public Icon getImage() {
+    //for making your own enemy
+    public Enemy(ImageIcon i, String n, int e, int g, int h, int a, int d){
+        p = new Player();
+        image = i;
+        name = n;
+        expdrop = e;
+        gpdrop = g;
+        health = h;
+        curhealth = health;
+        attack = a;
+        defense = d;
+    }
+    
+    //getters and setters
+    public final Icon getImage() {
         return image;
     }
 
-    public String getEnemyName() {
+    public final static String getEnemyName() {
         return name;
     }
 
-    public int getEnemyExpdrop() {
+    public final int getEnemyExpdrop() {
         return expdrop;
     }
 
-    public int getEnemyGpdrop() {
+    public final int getEnemyGpdrop() {
         return gpdrop;
     }
 
-    public int getEnemyHealth() {
+    public final int getEnemyHealth() {
         return health;
     }
 
-    public int getEnemyAttack() {
+    public final int getEnemyAttack() {
         return attack;
     }
 
-    public int getEnemyDefense() {
+    public final int getEnemyDefense() {
         return defense;
     }
 
-    public int getCurhealth() {
+    public final int getCurhealth() {
         return curhealth;
     }
 
     public void setCurhealth(int curhealth) {
         this.curhealth -= curhealth;
     }
+    
+    //abstract method
+    public abstract void reduceDamage();
 }
